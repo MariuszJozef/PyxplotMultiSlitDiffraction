@@ -1,0 +1,121 @@
+set width 13
+set numeric sigfig 3
+
+DiffractionPhase(x, slitWidthMm, wavelengthMm, screenPerpDistanceMm) = \
+    pi * slitWidthMm * x / wavelengthMm / sqrt(screenPerpDistanceMm**2 + x**2)
+
+DiffractionAmplitude(x, slitNumber, slitWidthMm, wavelengthMm, screenPerpDistanceMm) = \
+    (slitNumber == 0) ? 0 : \
+    (x == 0) ? 1 : \
+    sin(DiffractionPhase(x, slitWidthMm, wavelengthMm, screenPerpDistanceMm)) \
+    / DiffractionPhase(x, slitWidthMm, wavelengthMm, screenPerpDistanceMm)
+
+DiffractionIntensitySingleSlit(x, slitNumber, slitWidthMm, wavelengthMm, screenPerpDistanceMm) = \
+    DiffractionAmplitude(x, slitNumber, slitWidthMm, wavelengthMm, screenPerpDistanceMm)**2
+
+
+InterferencePhaseWithoutSlitNumber(x, slitSeparationMm, wavelengthMm, screenPerpDistanceMm) = \
+    pi * slitSeparationMm * x / wavelengthMm / sqrt(screenPerpDistanceMm**2 + x**2)
+
+InterferenceAmplitude(x, slitNumber, slitSeparationMm, wavelengthMm, screenPerpDistanceMm) = \
+    (slitNumber == 0) ? 0 : \
+    (x == 0) ? 1 : \
+    sin(slitNumber * InterferencePhaseWithoutSlitNumber(x, slitSeparationMm, wavelengthMm, screenPerpDistanceMm)) \
+    / slitNumber / sin(InterferencePhaseWithoutSlitNumber(x, slitSeparationMm, wavelengthMm, screenPerpDistanceMm))
+
+InterferenceIntensityMultiSlit(x, slitNumber, slitSeparationMm, wavelengthMm, screenPerpDistanceMm) = \
+    InterferenceAmplitude(x, slitNumber, slitSeparationMm, wavelengthMm, screenPerpDistanceMm)**2
+
+MultiSlitDiffractionInterferenceIntensity(x, slitWidthMm, slitNumber, slitSeparationMm, wavelengthMm, screenPerpDistanceMm) = DiffractionIntensitySingleSlit(x, slitNumber, slitWidthMm, wavelengthMm, screenPerpDistanceMm) \
+    * InterferenceIntensityMultiSlit(x, slitNumber, slitSeparationMm, wavelengthMm, screenPerpDistanceMm)
+
+set title "Combined Diffraction and Interference of Light due to Multiple Slits"
+set xlabel "Distance $x$ (mm) along viewing screen subtended by angle $\Theta$"
+set ylabel "Relative intensity of light $I(\Theta) / I(0)$" rotate 0
+set key below
+
+slitWidthMm = 0.05
+slitNumber = 3
+slitSeparationMm = 2 * slitWidthMm
+#slitSeparationMm = 0.1
+wavelengthMm = 5.1E-4
+screenPerpDistanceMm = 500
+maxAngleToObservationPointDeg = 2
+xMax = screenPerpDistanceMm * tan(pi / 180 * maxAngleToObservationPointDeg)
+xMin = -xMax
+xTickStep = (xMax - xMin) / 5
+mxTickStep = xTickStep / 2
+set xrange [xMin : xMax]
+set xtics xMin, xTickStep, xMax
+set mxtics xMin, mxTickStep, xMax
+
+yMin = -0.1
+yMax = 1.1
+yTickStep = (yMax - yMin) / 3
+myTickStep = yTickStep / 4
+yExtra = 0
+set yrange [yMin - yExtra : yMax + yExtra]
+set ytics yMin, yTickStep, yMax
+set mytics yMin, myTickStep, yMax
+
+set grid x1y1x2y2
+set gridmajcolor grey
+set gridmincolor grey
+
+latexExpression1 = "$I_1(\Theta) / I_1(0)$, "
+latexExpression1 += "$a = %s$ mm (slit width), " %(slitWidthMm)
+latexExpression1 += "$N = %d$ (slit number), " %(slitNumber)
+latexExpression1 += "$d = %.1f$ mm (slit separation)" %(slitSeparationMm)
+
+latexExpression2 = "$I_2(\Theta) / I_2(0)$, "
+latexExpression2 += "$\lambda = %.5f$ mm (wavelength of light), " %(wavelengthMm)
+latexExpression2 += "$D = %d$ mm (distance to screen)" %(screenPerpDistanceMm)
+
+latexExpression3 = "$I(\Theta) / I(0) \
+                = \Bigl( I_1(\Theta) / I_1(0) \Bigr) \Bigl( I_2(\Theta) / I_2(0) \Bigr) \
+                = \left( \
+                    \frac{ \
+                        \sin \Bigl( \pi a x / \bigl( \lambda \sqrt{D^2 + x^2} \bigr) \Bigr) \
+                    }{ \
+                        \pi a x / ( \lambda \sqrt{D^2 + x^2} ) \
+                    } \right)^2 \
+                \left( \
+                    \frac{ \
+                        \sin \Bigl( N \pi d x / \bigl( \lambda \sqrt{D^2 + x^2} \bigr) \Bigr) \
+                    }{ \
+                        N \sin \Bigl( \pi d x / \bigl( \lambda \sqrt{D^2 + x^2} \bigr) \Bigr) \
+                    } \right)^2$"
+
+
+set terminal pdf
+filename = "Plots/MultiSlitDiffractionInterference_SlitNumber=" + (slitNumber).str() + ".pdf"
+set output "%s"%filename
+
+
+plotPointsPerUnitLength = 30
+plotPoints = plotPointsPerUnitLength * (xMax - xMin)
+xIncrement = (xMax - xMin) / (plotPoints - 1)
+print "plotPointsPerUnitLength = %d, plotPoints = %d, xIncrement = %.2E" %(plotPointsPerUnitLength, plotPoints, xIncrement)
+
+set samples plotPoints
+
+plot DiffractionIntensitySingleSlit(x, slitNumber, slitWidthMm, wavelengthMm, screenPerpDistanceMm) \
+    with linetype 1 linewidth 2 color Orange title \
+    r"\parbox[t]{15cm}{%s}" \
+    %(latexExpression1), \
+    InterferenceIntensityMultiSlit(x, slitNumber, slitSeparationMm, wavelengthMm, screenPerpDistanceMm) \
+    with linetype 1 linewidth 1 color Rhodamine title \
+    r"\parbox[t]{15cm}{%s}" \
+    %(latexExpression2), \
+    MultiSlitDiffractionInterferenceIntensity(x, slitWidthMm, slitNumber, slitSeparationMm, wavelengthMm, screenPerpDistanceMm) \
+    with linetype 1 linewidth 3 color ForestGreen title \
+    r"\parbox[t]{15cm}{%s}" \
+    %(latexExpression3)
+
+print "Output written to file: " + filename
+
+filename = "Plots/MultiSlitDiffractionInterference_SlitNumber=" + (slitNumber).str() + ".jpeg"
+set terminal jpeg
+set output "%s" %filename
+refresh
+print "Output written to file: " + filename

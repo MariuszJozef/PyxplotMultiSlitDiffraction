@@ -1,0 +1,81 @@
+filename = "Plots/DiffractionOneSlit.pdf"
+set terminal pdf
+set output "%s"%filename
+set width 13
+set numeric sigfig 3
+
+Phase(x, slitWidthMm, wavelengthMm, screenPerpDistanceMm) = \
+    pi * slitWidthMm * x / wavelengthMm / sqrt(screenPerpDistanceMm**2 + x**2)
+
+DiffractionAmplitude(x, slitNumber, slitWidthMm, wavelengthMm, screenPerpDistanceMm) = \
+    (slitNumber == 0) ? 0 : \
+    (x == 0) ? 1 : \
+    sin(Phase(x, slitWidthMm, wavelengthMm, screenPerpDistanceMm)) \
+    / Phase(x, slitWidthMm, wavelengthMm, screenPerpDistanceMm)
+
+DiffractionIntensitySingleSlit(x, slitNumber, slitWidthMm, wavelengthMm, screenPerpDistanceMm) = \
+    DiffractionAmplitude(x, slitNumber, slitWidthMm, wavelengthMm, screenPerpDistanceMm)**2
+
+set title "Diffraction of light by a single slit"
+set xlabel "Distance $x$ (mm) along viewing screen subtended by angle $\Theta$"
+set ylabel "Relative intensity of light $I_1(\Theta) / I_1(0)$" rotate 0
+set key below
+
+slitNumber = 1
+slitWidthMm = 0.05
+wavelengthMm = 5.1E-4
+screenPerpDistanceMm = 500
+maxAngleToObservationPointDeg = 1.5
+xMax = screenPerpDistanceMm * tan(pi / 180 * maxAngleToObservationPointDeg)
+xMin = -xMax
+xTickStep = (xMax - xMin) / 5
+mxTickStep = xTickStep / 2
+set xrange [xMin : xMax]
+set xtics xMin, xTickStep, xMax
+set mxtics xMin, mxTickStep, xMax
+
+yMin = -0.1
+yMax = 1.1
+yTickStep = (yMax - yMin) / 3
+myTickStep = yTickStep / 4
+yExtra = 0
+set yrange [yMin - yExtra : yMax + yExtra]
+set ytics yMin, yTickStep, yMax
+set mytics yMin, myTickStep, yMax
+
+set grid x1y1x2y2
+set gridmajcolor grey
+set gridmincolor grey
+
+latexExpression1 = "$a = %s$ mm (slit width), " %(slitWidthMm)
+latexExpression1 += "$D = %s$ mm (distance to screen)" %(screenPerpDistanceMm)
+
+latexExpression2 = "$I_1(\Theta) / I_1(0) = \left( \
+                   \frac{ \
+                       \sin \Bigl( \pi a x / \bigl( \lambda \sqrt{D^2 + x^2} \bigr) \Bigr) \
+                   }{ \
+                       \pi a x / ( \lambda \sqrt{D^2 + x^2} ) \
+                   } \right)^2$"
+
+latexExpression3 = "$\lambda = %.5f$ mm (wavelength of light)" %(wavelengthMm)
+
+
+plotPointsPerUnitLength = 5
+plotPoints = plotPointsPerUnitLength * (xMax - xMin)
+xIncrement = (xMax - xMin) / (plotPoints - 1)
+print "plotPointsPerUnitLength = %d, plotPoints = %d, xIncrement = %.2E" %(plotPointsPerUnitLength, plotPoints, xIncrement)
+
+set samples plotPoints
+
+plot DiffractionIntensitySingleSlit(x, slitNumber, slitWidthMm, wavelengthMm, screenPerpDistanceMm) \
+    with linetype 1 linewidth 2 color 2 title \
+    r"\parbox[t]{10cm}{%s \\[1ex] %s \\[1ex] %s}" \
+    %(latexExpression1, latexExpression2, latexExpression3)
+
+print "Output written to file: " + filename
+
+filename = "Plots/DiffractionOneSlit.jpeg"
+set terminal jpeg
+set output "%s" %filename
+refresh
+print "Output written to file: " + filename
