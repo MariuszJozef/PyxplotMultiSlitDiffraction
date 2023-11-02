@@ -26,6 +26,12 @@ pyxplot InterferenceMultiSlit.ppl
 
 ![Plot6](https://github.com/MariuszJozef/PyxplotMultiSlitDiffraction/blob/develop/Plots/InterferenceMultiSlit.jpeg)
 
+## Similar graph but with real-time adjustable parameters
+
+[ImGuiImPlotGraphs](https://github.com/MariuszJozef/ImGuiImPlotGraphs.git)
 
 <!-- [PythonMultiSlitDiffraction](https://github.com/MariuszJozef/PythonMultiSlitDiffraction.git) -->
 
+<!-- [AsymptoteInterferenceMultiSlit](https://github.com/MariuszJozef/AsymptoteInterferenceMultiSlit.git) -->
+
+<!-- [SageMathInterferenceMultiSlit](https://github.com/MariuszJozef/SageMathInterferenceMultiSlit.git) -->
